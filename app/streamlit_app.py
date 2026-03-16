@@ -25,18 +25,21 @@ st.set_page_config(
 st.title("GroupBite AI - Restaurant Recommendation")
 st.markdown("Tell us your preferences and we'll suggest a restaurant.")
 
-# Load FAISS and embedding model once at app start
+# Load embedding model and FAISS vector store once at app start (cached for the session)
 @st.cache_resource
-def load_vector_store_and_embedder():
-    """Load embedding model and FAISS vector store once; cached for the session."""
-    embedding_model = get_embedding_model()
-    vector_store = load_vector_store(VECTOR_STORE_PATH, embedding_model)
-    return vector_store
+def load_embedding_model():
+    return get_embedding_model()
+
+
+@st.cache_resource
+def load_vector_database(embedding_model):
+    return load_vector_store(VECTOR_STORE_PATH, embedding_model)
 
 
 # Load resources on first run
 try:
-    vector_store = load_vector_store_and_embedder()
+    embedding_model = load_embedding_model()
+    vector_store = load_vector_database(embedding_model)
 except Exception as e:
     st.error(
         f"Could not load vector store. Run `scripts/build_vector_store.py` first and ensure "
