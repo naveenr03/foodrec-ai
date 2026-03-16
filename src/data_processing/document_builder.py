@@ -5,10 +5,7 @@ from pathlib import Path
 import pandas as pd
 from langchain_core.documents import Document
 
-
-def load_cleaned_dataset(path: str | Path = "data/processed/restaurants_clean.csv") -> pd.DataFrame:
-    """Load the cleaned restaurant dataset from CSV."""
-    return pd.read_csv(path)
+from src.data_processing.load_dataset import load_cleaned_dataset
 
 
 def _row_to_page_content(row: pd.Series) -> str:
