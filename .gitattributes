@@ -1,0 +1,2 @@
+# Force requirements.txt to be checked out with LF line endings (avoids encoding issues)
+requirements.txt text eol=lf
