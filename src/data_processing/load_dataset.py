@@ -21,6 +21,11 @@ def load_raw_dataset(path: str | Path) -> pd.DataFrame:
     return pd.read_csv(path)
 
 
+def load_cleaned_dataset(path: str | Path = "data/processed/restaurants_clean.csv") -> pd.DataFrame:
+    """Load the cleaned restaurant dataset from CSV."""
+    return pd.read_csv(path)
+
+
 def clean_dataset(df: pd.DataFrame) -> pd.DataFrame:
     """
     Clean the dataset: keep only required columns, drop nulls, convert cost to numeric.
