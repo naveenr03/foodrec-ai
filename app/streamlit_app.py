@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""GroupBite AI - Streamlit UI for restaurant recommendations."""
+"""Foodrec-ai - Streamlit UI for restaurant recommendations."""
 
 import sys
 from pathlib import Path
@@ -17,12 +17,12 @@ from src.retrieval.vector_store import load_vector_store
 VECTOR_STORE_PATH = PROJECT_ROOT / "data" / "vector_store"
 
 st.set_page_config(
-    page_title="GroupBite AI - Restaurant Recommendation",
+    page_title="Foodrec-ai - Restaurant Recommendation",
     page_icon="🍽️",
     layout="centered",
 )
 
-st.title("GroupBite AI - Restaurant Recommendation")
+st.title("Foodrec-ai - Restaurant Recommendation")
 st.markdown("Tell us your preferences and we'll suggest a restaurant.")
 
 # Load embedding model and FAISS vector store once at app start (cached for the session)
