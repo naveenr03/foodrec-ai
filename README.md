@@ -10,7 +10,7 @@ A RAG-based restaurant recommendation app that uses semantic search (FAISS + emb
 - **Vector store**: FAISS index for fast similarity search
 - **Retrieval**: Top-k restaurant retrieval by natural-language query
 - **LLM recommendation**: Groq (Llama) picks and explains the best match
-- **Streamlit UI**: Simple form (cuisine, budget, ambience, group size) and one-click recommendation
+- **Streamlit UI**: Form with optional food/dish search, optional cuisine, budget, ambience, group size, and one-click recommendation
 
 ## Prerequisites
 
@@ -53,13 +53,17 @@ A RAG-based restaurant recommendation app that uses semantic search (FAISS + emb
 
 ## Running the app
 
-Start the Streamlit UI:
+From the **project root** (not inside `venv/`), with the virtual environment activated:
 
 ```bash
-streamlit run app/streamlit_app.py
+python -m streamlit run app/streamlit_app.py
 ```
 
-Then open the URL shown in the terminal (e.g. `http://localhost:8501`). Enter cuisine, budget, ambience, and group size, then click **Find Restaurant** to get a recommendation and the list of retrieved options.
+On Windows PowerShell, activate the venv first: `.\venv\Scripts\Activate.ps1`.
+
+Using `python -m streamlit` avoids “streamlit is not recognized” when the `streamlit` launcher is not on your `PATH`. You can use `streamlit run app/streamlit_app.py` instead if that command works.
+
+Then open the URL shown in the terminal (e.g. `http://localhost:8501`). Optionally enter a **food or dish** (e.g. burger), **cuisine**, budget, ambience, and group size, then click **Find restaurant** to get a recommendation and the list of retrieved options.
 
 ## Project structure
 
