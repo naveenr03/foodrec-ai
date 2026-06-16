@@ -8,7 +8,7 @@ A RAG-based restaurant recommendation app that uses semantic search (FAISS + emb
 - **Document store**: Convert restaurants into LangChain documents for retrieval
 - **Embeddings**: HuggingFace sentence-transformers (`all-MiniLM-L6-v2`)
 - **Vector store**: FAISS index for fast similarity search
-- **Retrieval**: Top-k restaurant retrieval by natural-language query
+- **Retrieval**: Top-k restaurant retrieval by natural-language query, with **FAISS distance scores** surfaced in the UI and API
 - **LLM recommendation**: Groq (Llama) picks and explains the best match
 - **Streamlit UI**: Form with optional food/dish search, optional cuisine, budget, ambience, group size, and one-click recommendation
 
@@ -16,7 +16,7 @@ A RAG-based restaurant recommendation app that uses semantic search (FAISS + emb
 
 - Python 3.10+
 - [Groq API key](https://console.groq.com) (free tier available)
-- Restaurant dataset: place `zomato.csv` in `data/raw/`
+- Restaurant dataset: default raw file is set in [`src/data_processing/constants.py`](src/data_processing/constants.py) (`DEFAULT_RAW_CSV_NAME`); place that file under `data/raw/`.
 
 ## Installation
 
@@ -31,16 +31,20 @@ A RAG-based restaurant recommendation app that uses semantic search (FAISS + emb
    source venv/bin/activate   # On Windows: venv\Scripts\Activate.ps1
    pip install -r requirements.txt
   ```
-3. **Environment variables**
-  Create a `.env` file in the project root:
+3. **Environment variables** (project root `.env` and/or shell):
+
+   | Variable | Purpose |
+   |----------|---------|
+   | `GROQ_API_KEY` | Required for LLM recommendations (Groq). |
+   | `FOODREC_RETRIEVAL_DEBUG` | Set to `1` or `true` to log each retrieval query, FAISS score, and restaurant name to **stderr** (useful when running Streamlit or scripts from a terminal). |
 
 ## Data setup
 
 1. Put the raw restaurant CSV at:
   ```text
-   data/raw/zomato.csv
+   data/raw/<your file>.csv
   ```
-   Expected columns include: `name`, `location`, `cuisines`, `approx_cost(for two people)`, `rate`, `rest_type`.
+   The default filename is defined in `src/data_processing/constants.py` (`DEFAULT_RAW_CSV_NAME`); `scripts/run_data_pipeline.py` uses the same value. You can use another file by editing that constant or the script’s path. Expected columns include: `name`, `location`, `cuisines`, `approx_cost(for two people)`, `rate`, `rest_type`. **Newer Zomato-style CSVs** (e.g. Chennai) often use `Name of Restaurant`, `Cuisine`, `Price for 2`, `Dining Rating`, and `Features` — these are mapped automatically in [`src/data_processing/column_aliases.py`](src/data_processing/column_aliases.py).
 2. **Run the data pipeline** (clean, sample 2000 rows, save to `data/processed/`)
   ```bash
    python scripts/run_data_pipeline.py
@@ -65,17 +69,41 @@ Using `python -m streamlit` avoids “streamlit is not recognized” when the `s
 
 Then open the URL shown in the terminal (e.g. `http://localhost:8501`). Optionally enter a **food or dish** (e.g. burger), **cuisine**, budget, ambience, and group size, then click **Find restaurant** to get a recommendation and the list of retrieved options.
 
+## Architecture and code layout
+
+End-to-end flow (data pipeline, FAISS build, retrieval, LLM) is documented in **[docs/TECHNICAL_OVERVIEW_AND_INTERVIEW_PREP.md](docs/TECHNICAL_OVERVIEW_AND_INTERVIEW_PREP.md)**. Use that doc for module-by-module behavior and interview-style Q&A; this README stays focused on setup and commands.
+
+- **Paths**: [`src/paths.py`](src/paths.py) — resolved `Path`s for `data/raw`, processed CSV, and vector store (used by scripts and the app).
+- **Column mapping**: [`src/data_processing/column_aliases.py`](src/data_processing/column_aliases.py) — raw header aliases; ETL lives in [`load_dataset.py`](src/data_processing/load_dataset.py).
+- **CLI scripts**: each runnable under `scripts/` calls [`scripts/bootstrap.py`](scripts/bootstrap.py) once so `src.*` imports work without extra `PYTHONPATH` setup.
+
+## Troubleshooting
+
+**Wrong city or old restaurants after changing the raw CSV**
+
+The app searches a **FAISS index** on disk (`data/vector_store/`), not the raw CSV. Changing `DEFAULT_RAW_CSV_NAME` or swapping files under `data/raw/` only takes effect after:
+
+1. `python scripts/run_data_pipeline.py` — overwrites `data/processed/restaurants_clean.csv`
+2. `python scripts/build_vector_store.py` — rebuilds the index and writes `index_build_manifest.json`
+
+Then restart Streamlit (or use **C** “Clear cache” in the app menu). The UI caption under the header shows which raw file the current index was built from.
+
+If `build_vector_store.py` fails with **“No columns to parse from file”**, your `restaurants_clean.csv` is invalid (often from a raw CSV whose headers did not match the expected schema, which previously produced a file with rows but **zero columns**). Delete `data/processed/restaurants_clean.csv`, run `run_data_pipeline.py` again (you should now get a clear error or a valid CSV), then `build_vector_store.py`.
+
 ## Project structure
 
 ```text
 foodrec-ai/
 ├── app/
-│   └── streamlit_app.py          # Foodrec-ai web UI
+│   ├── streamlit_app.py          # Thin entry: loads index, wires UI
+│   ├── query_builder.py          # Natural-language query from form fields
+│   └── ui.py                     # Streamlit layout helpers (styles, hero, results)
 ├── data/
-│   ├── raw/                      # zomato.csv (not in repo)
+│   ├── raw/                      # Raw CSV (see constants.py; not in repo)
 │   ├── processed/                # restaurants_clean.csv
 │   └── vector_store/             # FAISS index (built by script)
 ├── scripts/
+│   ├── bootstrap.py              # Puts repo root on sys.path for CLI scripts
 │   ├── run_data_pipeline.py      # Clean + sample dataset
 │   ├── build_vector_store.py     # Build FAISS from documents
 │   ├── test_documents.py         # Test document builder
@@ -83,8 +111,11 @@ foodrec-ai/
 │   ├── test_retrieval.py         # Test semantic search
 │   └── test_llm_recommendation.py # Test full RAG + LLM
 ├── src/
+│   ├── paths.py                  # Project-root paths for data and vector store
 │   ├── data_processing/
 │   │   ├── load_dataset.py       # Load/clean/save CSV
+│   │   ├── column_aliases.py     # Raw CSV header → canonical column names
+│   │   ├── constants.py          # Default raw CSV filename
 │   │   └── document_builder.py   # Rows → LangChain documents
 │   ├── embeddings/
 │   │   └── embedder.py           # HuggingFace embedding model
@@ -110,7 +141,7 @@ foodrec-ai/
 | `build_vector_store.py`      | Load cleaned data → build documents → embed → save FAISS to `data/vector_store/` |
 | `test_documents.py`          | Load cleaned data, build documents, print count and one sample                   |
 | `test_embeddings.py`         | Load data, build docs, load embedder, print embedding dimension (e.g. 384)       |
-| `test_retrieval.py`          | Load FAISS + embedder, run a sample query, print top 5 restaurants               |
+| `test_retrieval.py`          | Load FAISS + embedder, run a sample query, print top 5 with **distance scores**        |
 | `test_llm_recommendation.py` | Full flow: retrieve → Groq recommendation → print result                         |
 
 

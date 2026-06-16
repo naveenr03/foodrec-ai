@@ -1,20 +1,22 @@
 #!/usr/bin/env python3
-"""Runnable script to execute the data processing pipeline and generate the cleaned dataset."""
+"""Runnable script to execute the data processing pipeline and generate the cleaned dataset.
+
+Uses ``DEFAULT_RAW_CSV_NAME`` from ``src.data_processing.constants`` (via ``src.paths.raw_dataset_csv``).
+"""
 
 import sys
-from pathlib import Path
 
-# Add project root so we can import from src
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
+import bootstrap
+
+bootstrap.ensure_project_root()
 
 from src.data_processing.load_dataset import run_pipeline
+from src.paths import processed_restaurants_csv, raw_dataset_csv
 
 
 def main() -> None:
-    raw_path = PROJECT_ROOT / "data" / "raw" / "zomato.csv"
-    processed_path = PROJECT_ROOT / "data" / "processed" / "restaurants_clean.csv"
+    raw_path = raw_dataset_csv()
+    processed_path = processed_restaurants_csv()
 
     if not raw_path.exists():
         print(f"Error: Raw dataset not found at {raw_path}")
@@ -27,7 +29,10 @@ def main() -> None:
         sample_size=2000,
         random_state=42,
     )
-    print(f"Done. Cleaned dataset: {len(df)} rows saved to {processed_path}")
+    print(
+        f"Done. Cleaned dataset: {len(df)} rows, {len(df.columns)} columns saved to {processed_path}"
+    )
+    print(f"Columns: {list(df.columns)}")
 
 
 if __name__ == "__main__":

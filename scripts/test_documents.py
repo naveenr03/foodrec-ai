@@ -2,17 +2,18 @@
 """Test script: load dataset, generate documents, print count and one sample."""
 
 import sys
-from pathlib import Path
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
+import bootstrap
 
-from src.data_processing.document_builder import build_documents, load_cleaned_dataset
+bootstrap.ensure_project_root()
+
+from src.data_processing.document_builder import build_documents
+from src.data_processing.load_dataset import load_cleaned_dataset
+from src.paths import processed_restaurants_csv
 
 
 def main() -> None:
-    processed_path = PROJECT_ROOT / "data" / "processed" / "restaurants_clean.csv"
+    processed_path = processed_restaurants_csv()
 
     if not processed_path.exists():
         print(f"Error: Cleaned dataset not found at {processed_path}")

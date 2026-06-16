@@ -1,0 +1,6 @@
+{
+  "source_processed_csv": "data\\processed\\restaurants_clean.csv",
+  "processed_row_count": 2000,
+  "raw_csv_name_at_build": "chennai_zomato.csv",
+  "built_at_utc": "2026-06-16T06:23:58.182451+00:00"
+}
